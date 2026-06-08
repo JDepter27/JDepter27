@@ -790,52 +790,6 @@ button:disabled {
           <div class="result-cell">Status</div>
           <div class="result-cell">Scor</div>
         </div>
-        
-        <!-- Sample data - these will be replaced by actual database results -->
-        <div class="result-row">
-          <div class="result-cell name" data-label="Nume">Ion Popescu</div>
-          <div class="result-cell cnp" data-label="CNP">1850515123456</div>
-          <div class="result-cell status" data-label="Status">
-            <span class="status-badge passed">✓ Promovat</span>
-          </div>
-          <div class="result-cell score" data-label="Scor">85%</div>
-        </div>
-
-        <div class="result-row">
-          <div class="result-cell name" data-label="Nume">Maria Ionescu</div>
-          <div class="result-cell cnp" data-label="CNP">2920726234567</div>
-          <div class="result-cell status" data-label="Status">
-            <span class="status-badge failed">✗ Picat</span>
-          </div>
-          <div class="result-cell score" data-label="Scor">42%</div>
-        </div>
-
-        <div class="result-row">
-          <div class="result-cell name" data-label="Nume">Alexandru Vasile</div>
-          <div class="result-cell cnp" data-label="CNP">1900112345678</div>
-          <div class="result-cell status" data-label="Status">
-            <span class="status-badge passed">✓ Promovat</span>
-          </div>
-          <div class="result-cell score" data-label="Scor">92%</div>
-        </div>
-
-        <div class="result-row">
-          <div class="result-cell name" data-label="Nume">Elena Stoica</div>
-          <div class="result-cell cnp" data-label="CNP">2871203567890</div>
-          <div class="result-cell status" data-label="Status">
-            <span class="status-badge passed">✓ Promovat</span>
-          </div>
-          <div class="result-cell score" data-label="Scor">78%</div>
-        </div>
-
-        <div class="result-row">
-          <div class="result-cell name" data-label="Nume">Andrei Mihai</div>
-          <div class="result-cell cnp" data-label="CNP">1880923456789</div>
-          <div class="result-cell status" data-label="Status">
-            <span class="status-badge failed">✗ Picat</span>
-          </div>
-          <div class="result-cell score" data-label="Scor">35%</div>
-        </div>
       </div>
     </div>
 
@@ -923,6 +877,41 @@ button:disabled {
 <script>
 const API_BASE = window.location.origin;
 
+// ===================== RESULTS MANAGEMENT =====================
+function loadAndDisplayResults() {
+  const grid = document.getElementById('resultsGrid');
+  const results = JSON.parse(localStorage.getItem('testResults')) || [];
+  
+  // Keep header
+  const header = grid.querySelector('.result-row.header');
+  grid.innerHTML = '';
+  grid.appendChild(header);
+
+  if (results.length === 0) {
+    grid.innerHTML += '<div class="empty-state"><p>Nu sunt rezultate disponibile.</p></div>';
+    return;
+  }
+
+  // Sort by date descending (newest first)
+  results.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+  results.forEach(result => {
+    const statusClass = result.passed ? 'passed' : 'failed';
+    const statusText = result.passed ? '✓ Promovat' : '✗ Picat';
+    const row = document.createElement('div');
+    row.className = 'result-row';
+    row.innerHTML = `
+      <div class="result-cell name" data-label="Nume">${result.name}</div>
+      <div class="result-cell cnp" data-label="CNP">${result.cnp}</div>
+      <div class="result-cell status" data-label="Status">
+        <span class="status-badge ${statusClass}">${statusText}</span>
+      </div>
+      <div class="result-cell score" data-label="Scor">${result.score}%</div>
+    `;
+    grid.appendChild(row);
+  });
+}
+
 // ===================== ANTI-CHEAT SYSTEM =====================
 class AntiCheatSystem {
   constructor() {
@@ -956,7 +945,6 @@ class AntiCheatSystem {
     console.warn(`🚨 VIOLATION DETECTED: ${type} (${severity})`);
     this.updateMonitor();
 
-    // Trimite la server în timp real
     if (this.isTestRunning) {
       this.sendViolationToServer(violation);
     }
@@ -987,7 +975,6 @@ class AntiCheatSystem {
   }
 
   startMonitoring() {
-    // 1. DETECTIE TAB SWITCH (prin visibility API)
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         this.logViolation('TAB SWITCH DETECTED', 'critical');
@@ -997,7 +984,6 @@ class AntiCheatSystem {
       }
     });
 
-    // 2. DETECTIE FULLSCREEN EXIT
     document.addEventListener('fullscreenchange', () => {
       if (!document.fullscreenElement && this.isTestRunning) {
         this.logViolation('FULLSCREEN EXIT', 'critical');
@@ -1005,10 +991,8 @@ class AntiCheatSystem {
       }
     });
 
-    // 3. DETECTIE DEVTOOLS (măsurare dimensiuni)
     setInterval(() => {
       if (!this.isTestRunning) return;
-
       const threshold = 160;
       if (window.outerWidth - window.innerWidth > threshold ||
           window.outerHeight - window.innerHeight > threshold) {
@@ -1017,7 +1001,6 @@ class AntiCheatSystem {
       }
     }, 200);
 
-    // 4. DETECTIE PRINT SCREEN / SCREENSHOT
     document.addEventListener('keydown', (e) => {
       if (e.key === 'PrintScreen' && this.isTestRunning) {
         e.preventDefault();
@@ -1025,12 +1008,7 @@ class AntiCheatSystem {
         this.triggerTestFailure('Screenshot detectat. Examen picat.');
       }
 
-      // 5. BLOCHEAZĂ SHORTCUT-URI SUSPECTE
-      const suspiciousShortcuts = {
-        'F12': true,
-        'F11': true,
-      };
-
+      const suspiciousShortcuts = { 'F12': true, 'F11': true };
       if (suspiciousShortcuts[e.key]) {
         e.preventDefault();
         this.logViolation(`SHORTCUT BLOCKED: ${e.key}`, 'high');
@@ -1042,7 +1020,6 @@ class AntiCheatSystem {
       }
     });
 
-    // 6. BLOCHEAZĂ RIGHT-CLICK
     document.addEventListener('contextmenu', (e) => {
       if (this.isTestRunning) {
         e.preventDefault();
@@ -1050,7 +1027,6 @@ class AntiCheatSystem {
       }
     });
 
-    // 7. BLOCHEAZĂ COPY-PASTE
     document.addEventListener('copy', (e) => {
       if (this.isTestRunning) {
         e.preventDefault();
@@ -1065,17 +1041,13 @@ class AntiCheatSystem {
       }
     });
 
-    // 8. DETECTIE WINDOW BLUR (focus pierdut)
     window.addEventListener('blur', () => {
       if (this.isTestRunning) {
         this.logViolation('WINDOW BLUR', 'high');
       }
     });
 
-    // 9. MONITORIZARE SCREENSHOT VIA CANVAS
     this.setupCanvasProtection();
-
-    // 10. ANTI-HEADLESS BROWSER CHECK
     this.checkHeadless();
   }
 
@@ -1104,11 +1076,7 @@ class AntiCheatSystem {
     testFailed = true;
     securityLock = true;
     clearInterval(timerInterval);
-    
-    // Trimite raport final la server
     this.sendCheatingReport(reason);
-    
-    // End test cu failură
     endTest(false);
   }
 
@@ -1143,21 +1111,21 @@ const antiCheat = new AntiCheatSystem();
 
 // ===================== TEST SCRIPT =====================
 const questionBank = [
-  { type: 'choice', question: 'Pe ce principiu se bazează toate evaluările și consilierile psihologice?', options: ['Respectarea confidențialității și a respectului reciproc', 'Respectarea[...]', correct: 0 },
-  { type: 'choice', question: 'Ce trebuie să facă un membru al departamentului dacă are un conflict intern?', options: ['Să se adreseze unui Director Adjunct SMURD', 'Să urmeze scara ierarhi[...]', correct: 0 },
-  { type: 'choice', question: 'Cine are responsabilitatea de a analiza problemele comportamentale ale colegilor sancționați?', options: ['Secretarii departamentului', 'Managerii SMURD', 'Superv[...]', correct: 1 },
-  { type: 'choice', question: 'Care este suma maximă care poate fi solicitată pentru o ședință de terapie sau evaluare psihologică?', options: ['15.000$', '25.000$', '50.000$', '75.000$'], correct: 2 },
-  { type: 'choice', question: 'Ce sancțiune se aplică în mod normal pentru neîndeplinirea raportului săptămânal?', options: ['Suspendare temporară', 'Avertisment Verbal (AV)', 'Faction Wa[...]', correct: 1 },
-  { type: 'choice', question: 'Cât timp trebuie păstrate înregistrările ședințelor psihologice?', options: ['24 de ore', '48 de ore', '72 de ore', '7 zile'], correct: 2 },
-  { type: 'choice', question: 'În cât timp trebuie prezentate dovezile solicitate de un superior?', options: ['12 ore', '24 ore', '48 ore', 'Până la sfârșitul săptămânii'], correct: 1 },
-  { type: 'choice', question: 'Ce se poate întâmpla dacă un psiholog nu poate prezenta dovezile unei ședințe atunci când acestea sunt solicitate?', options: ['Primește o atenționare verba[...]', correct: 0 },
-  { type: 'choice', question: 'Care este termenul de valabilitate al unei adeverințe psihologice?', options: ['7 zile', '10 zile', '14 zile (2 săptămâni)', '30 zile'], correct: 2 },
-  { type: 'choice', question: 'După cât timp poate fi reluată o ședință cu statusul „Picat"?', options: ['12 ore', '24 ore', '48 ore', '72 ore'], correct: 1 },
-  { type: 'choice', question: 'Ce condiție trebuie îndeplinită pentru ca un psiholog să poată susține o ședință psihologică?', options: ['Să fie minim gradul de Supervizor', 'Să deți[...]', correct: 0 },
-  { type: 'choice', question: 'Ce sancțiune se aplică pentru utilizarea licenței unui alt psiholog?', options: ['AV', 'FW', 'Suspendare pe perioadă determinată', 'Demitere din departament'], correct: 3 },
-  { type: 'choice', question: 'În cazul unei intervenții pentru tentativă de suicid, pe ce frecvență trebuie mutată echipa medicală?', options: ['Frecvența 10', 'Frecvența 11', 'Frecven[...]', correct: 1 },
-  { type: 'choice', question: 'Care este prima etapă a protocolului de intervenție psihologică în caz de tentativă de suicid?', options: ['Transportarea pacientului la spital', 'Evaluarea ri[...]', correct: 1 },
-  { type: 'choice', question: 'Care dintre următoarele comportamente este interzis în timpul unei intervenții suicidare?', options: ['Folosirea unui ton calm și empatic', 'Adresarea pacientul[...]', correct: 1 }
+  { type: 'choice', question: 'Pe ce principiu se bazează toate evaluările și consilierile psihologice?', options: ['Respectarea confidențialității și a respectului reciproc', 'Ignorarea regulilor', 'Judecata personală'], correct: 0 },
+  { type: 'choice', question: 'Ce trebuie să facă un membru al departamentului dacă are un conflict intern?', options: ['Să se adreseze unui superior', 'Să ignor problema', 'Să plece din departament'], correct: 0 },
+  { type: 'choice', question: 'Cine are responsabilitatea de a analiza problemele comportamentale?', options: ['Toti membrii', 'Managerii', 'Supervizorul'], correct: 2 },
+  { type: 'choice', question: 'Care este suma maximă pentru o ședință?', options: ['10.000$', '25.000$', '50.000$'], correct: 2 },
+  { type: 'choice', question: 'Ce sancțiune se aplică normal?', options: ['Avertisment', 'Suspendare', 'Demitere'], correct: 0 },
+  { type: 'choice', question: 'Cât timp se păstrează înregistrările?', options: ['24 ore', '48 ore', '72 ore'], correct: 2 },
+  { type: 'choice', question: 'În cât timp se prezintă dovezile?', options: ['12 ore', '24 ore', '48 ore'], correct: 1 },
+  { type: 'choice', question: 'Ce se întâmplă fără dovezi?', options: ['Avertisment', 'Nimic', 'Excludere'], correct: 0 },
+  { type: 'choice', question: 'Care este termenul adeverinței?', options: ['7 zile', '14 zile', '30 zile'], correct: 1 },
+  { type: 'choice', question: 'După cât timp se reia testul?', options: ['12 ore', '24 ore', '72 ore'], correct: 1 },
+  { type: 'choice', question: 'Ce condiție pentru ședință?', options: ['Grad minim', 'Experiență', 'Vârsta'], correct: 0 },
+  { type: 'choice', question: 'Sancțiune pentru folosire licență?', options: ['AV', 'FW', 'Demitere'], correct: 2 },
+  { type: 'choice', question: 'Frecvență pentru intervenție?', options: ['10', '11', '12'], correct: 1 },
+  { type: 'choice', question: 'Prima etapă de protocol?', options: ['Transport', 'Evaluare', 'Raport'], correct: 1 },
+  { type: 'choice', question: 'Ce comportament interzis?', options: ['Empatie', 'Furie', 'Neatenție'], correct: 2 }
 ];
 
 const TOTAL_STEPS = 15;
@@ -1323,22 +1291,31 @@ function endTest(passed) {
 
   if (!resultSent && testUserName && testUserCNP) {
     resultSent = true;
+    const result = {
+      name: testUserName,
+      cnp: testUserCNP,
+      score: percentage,
+      passed: passing,
+      timestamp: new Date().toISOString()
+    };
+
+    // Save to localStorage
+    const results = JSON.parse(localStorage.getItem('testResults')) || [];
+    results.push(result);
+    localStorage.setItem('testResults', JSON.stringify(results));
+
+    // Send to server
     fetch(`${API_BASE}/api/test-result`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        user_name: testUserName,
-        user_cnp: testUserCNP,
-        score: percentage,
-        passed: passing,
-        timestamp: new Date().toISOString()
-      })
+      body: JSON.stringify(result)
     }).catch(e => console.log('Result sent'));
   }
 
   switchPage(pageResult);
 }
 
+// EVENT LISTENERS
 startTestBtn.addEventListener('click', () => {
   switchPage(pageRules);
 });
@@ -1391,11 +1368,17 @@ retryBtn.addEventListener('click', () => {
   preTestName.value = '';
   preTestCNP.value = '';
   antiCheat.disableTestMode();
+  loadAndDisplayResults();
   switchPage(pageHome);
 });
 
 closeAlertBtn.addEventListener('click', () => {
   alertOverlay.classList.add('hidden');
+});
+
+// Load results on page load
+window.addEventListener('load', () => {
+  loadAndDisplayResults();
 });
 </script>
 </body>
