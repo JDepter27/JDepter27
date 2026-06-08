@@ -16,6 +16,8 @@
   --accent-strong: #b973ff;
   --border: rgba(255,255,255,0.08);
   --shadow: 0 30px 90px rgba(20, 10, 50, 0.35);
+  --success: #10b981;
+  --danger: #ef4444;
 }
 
 * {
@@ -504,8 +506,131 @@ button:disabled {
   max-width: 200px;
 }
 
+/* ====== RESULTS TABLE STYLES ====== */
+.results-section {
+  max-width: 1200px;
+  margin: 40px auto 0;
+  padding: 32px;
+  border: 1px solid var(--border);
+  border-radius: 34px;
+  backdrop-filter: blur(20px);
+  background: rgba(18, 12, 30, 0.82);
+  box-shadow: var(--shadow);
+}
+
+.results-section h2 {
+  margin-top: 0;
+  font-size: 2rem;
+  margin-bottom: 28px;
+  color: var(--text);
+}
+
+.results-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.result-row {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1fr 1fr;
+  gap: 16px;
+  padding: 18px 20px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  align-items: center;
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.result-row:hover {
+  transform: translateY(-2px);
+  background: rgba(139, 89, 255, 0.08);
+  border-color: rgba(139, 89, 255, 0.25);
+}
+
+.result-row.header {
+  background: rgba(139, 89, 255, 0.15);
+  border: 1px solid rgba(139, 89, 255, 0.3);
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent-strong);
+  padding: 16px 20px;
+}
+
+.result-row.header:hover {
+  transform: none;
+  background: rgba(139, 89, 255, 0.15);
+}
+
+.result-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.result-cell.name {
+  color: var(--text);
+  font-weight: 500;
+  grid-column: 1;
+}
+
+.result-cell.cnp {
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.result-cell.status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.status-badge.passed {
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--success);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.status-badge.failed {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--danger);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.result-cell.score {
+  text-align: right;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
 @media (max-width: 900px) {
-  .hero-panel, .card, .topbar {
+  .hero-panel, .card, .topbar, .results-section {
     padding: 24px;
   }
 
@@ -529,6 +654,46 @@ button:disabled {
   button {
     width: 100%;
   }
+
+  .result-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .result-row.header {
+    display: none;
+  }
+
+  .result-cell {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 8px;
+  }
+
+  .result-cell::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+  }
+
+  .result-cell.name::before {
+    content: 'Nume';
+  }
+
+  .result-cell.cnp::before {
+    content: 'CNP';
+  }
+
+  .result-cell.status::before {
+    content: 'Status';
+  }
+
+  .result-cell.score::before {
+    content: 'Scor';
+  }
 }
 
 @media (max-width: 640px) {
@@ -551,6 +716,16 @@ button:disabled {
 
   .card-actions {
     flex-direction: column;
+  }
+
+  .results-section {
+    padding: 20px;
+    margin-top: 20px;
+  }
+
+  .results-section h2 {
+    font-size: 1.5rem;
+    margin-bottom: 20px;
   }
 }
 </style>
@@ -604,6 +779,66 @@ button:disabled {
         </div>
       </aside>
     </div>
+
+    <!-- RESULTS TABLE SECTION -->
+    <div class="results-section">
+      <h2>📊 Evidență Rezultate Teste</h2>
+      <div class="results-grid" id="resultsGrid">
+        <div class="result-row header">
+          <div class="result-cell">Nume și Prenume</div>
+          <div class="result-cell">CNP</div>
+          <div class="result-cell">Status</div>
+          <div class="result-cell">Scor</div>
+        </div>
+        
+        <!-- Sample data - these will be replaced by actual database results -->
+        <div class="result-row">
+          <div class="result-cell name" data-label="Nume">Ion Popescu</div>
+          <div class="result-cell cnp" data-label="CNP">1850515123456</div>
+          <div class="result-cell status" data-label="Status">
+            <span class="status-badge passed">✓ Promovat</span>
+          </div>
+          <div class="result-cell score" data-label="Scor">85%</div>
+        </div>
+
+        <div class="result-row">
+          <div class="result-cell name" data-label="Nume">Maria Ionescu</div>
+          <div class="result-cell cnp" data-label="CNP">2920726234567</div>
+          <div class="result-cell status" data-label="Status">
+            <span class="status-badge failed">✗ Picat</span>
+          </div>
+          <div class="result-cell score" data-label="Scor">42%</div>
+        </div>
+
+        <div class="result-row">
+          <div class="result-cell name" data-label="Nume">Alexandru Vasile</div>
+          <div class="result-cell cnp" data-label="CNP">1900112345678</div>
+          <div class="result-cell status" data-label="Status">
+            <span class="status-badge passed">✓ Promovat</span>
+          </div>
+          <div class="result-cell score" data-label="Scor">92%</div>
+        </div>
+
+        <div class="result-row">
+          <div class="result-cell name" data-label="Nume">Elena Stoica</div>
+          <div class="result-cell cnp" data-label="CNP">2871203567890</div>
+          <div class="result-cell status" data-label="Status">
+            <span class="status-badge passed">✓ Promovat</span>
+          </div>
+          <div class="result-cell score" data-label="Scor">78%</div>
+        </div>
+
+        <div class="result-row">
+          <div class="result-cell name" data-label="Nume">Andrei Mihai</div>
+          <div class="result-cell cnp" data-label="CNP">1880923456789</div>
+          <div class="result-cell status" data-label="Status">
+            <span class="status-badge failed">✗ Picat</span>
+          </div>
+          <div class="result-cell score" data-label="Scor">35%</div>
+        </div>
+      </div>
+    </div>
+
     <div class="decor-lines"></div>
   </div>
 
@@ -908,21 +1143,21 @@ const antiCheat = new AntiCheatSystem();
 
 // ===================== TEST SCRIPT =====================
 const questionBank = [
-  { type: 'choice', question: 'Pe ce principiu se bazează toate evaluările și consilierile psihologice?', options: ['Respectarea confidențialității și a respectului reciproc', 'Respectarea[...]', 'Respectarea legii', 'Nici o restricție'], correct: 0 },
-  { type: 'choice', question: 'Ce trebuie să facă un membru al departamentului dacă are un conflict intern?', options: ['Să se adreseze unui Director Adjunct SMURD', 'Să urmeze scara ierarhică', 'Să ignora situația', 'Să se confie colegilor'], correct: 0 },
-  { type: 'choice', question: 'Cine are responsabilitatea de a analiza problemele comportamentale ale colegilor sancționați?', options: ['Secretarii departamentului', 'Managerii SMURD', 'Supervizorul psihologic', 'Toți membrii'], correct: 2 },
-  { type: 'choice', question: 'Care este suma maximă care poate fi solicitată pentru o ședință de terapie sau evaluare psihologică?', options: ['15.000$', '25.000$', '50.000$', '75.000$'], correct: 1 },
-  { type: 'choice', question: 'Ce sancțiune se aplică în mod normal pentru neîndeplinirea raportului săptămânal?', options: ['Suspendare temporară', 'Avertisment Verbal (AV)', 'Faction Warning (FW)', 'Demitere'], correct: 1 },
+  { type: 'choice', question: 'Pe ce principiu se bazează toate evaluările și consilierile psihologice?', options: ['Respectarea confidențialității și a respectului reciproc', 'Respectarea[...]', correct: 0 },
+  { type: 'choice', question: 'Ce trebuie să facă un membru al departamentului dacă are un conflict intern?', options: ['Să se adreseze unui Director Adjunct SMURD', 'Să urmeze scara ierarhi[...]', correct: 0 },
+  { type: 'choice', question: 'Cine are responsabilitatea de a analiza problemele comportamentale ale colegilor sancționați?', options: ['Secretarii departamentului', 'Managerii SMURD', 'Superv[...]', correct: 1 },
+  { type: 'choice', question: 'Care este suma maximă care poate fi solicitată pentru o ședință de terapie sau evaluare psihologică?', options: ['15.000$', '25.000$', '50.000$', '75.000$'], correct: 2 },
+  { type: 'choice', question: 'Ce sancțiune se aplică în mod normal pentru neîndeplinirea raportului săptămânal?', options: ['Suspendare temporară', 'Avertisment Verbal (AV)', 'Faction Wa[...]', correct: 1 },
   { type: 'choice', question: 'Cât timp trebuie păstrate înregistrările ședințelor psihologice?', options: ['24 de ore', '48 de ore', '72 de ore', '7 zile'], correct: 2 },
   { type: 'choice', question: 'În cât timp trebuie prezentate dovezile solicitate de un superior?', options: ['12 ore', '24 ore', '48 ore', 'Până la sfârșitul săptămânii'], correct: 1 },
-  { type: 'choice', question: 'Ce se poate întâmpla dacă un psiholog nu poate prezenta dovezile unei ședințe atunci când acestea sunt solicitate?', options: ['Primește o atenționare verbală', 'Primește o FW', 'Pierde licența pentru o perioadă', 'Este destituit'], correct: 2 },
+  { type: 'choice', question: 'Ce se poate întâmpla dacă un psiholog nu poate prezenta dovezile unei ședințe atunci când acestea sunt solicitate?', options: ['Primește o atenționare verba[...]', correct: 0 },
   { type: 'choice', question: 'Care este termenul de valabilitate al unei adeverințe psihologice?', options: ['7 zile', '10 zile', '14 zile (2 săptămâni)', '30 zile'], correct: 2 },
   { type: 'choice', question: 'După cât timp poate fi reluată o ședință cu statusul „Picat"?', options: ['12 ore', '24 ore', '48 ore', '72 ore'], correct: 1 },
-  { type: 'choice', question: 'Ce condiție trebuie îndeplinită pentru ca un psiholog să poată susține o ședință psihologică?', options: ['Să fie minim gradul de Supervizor', 'Să dețină o licență validă', 'Să aibă cel puțin 5 ani de experiență', 'Să fie aprobat de director'], correct: 1 },
+  { type: 'choice', question: 'Ce condiție trebuie îndeplinită pentru ca un psiholog să poată susține o ședință psihologică?', options: ['Să fie minim gradul de Supervizor', 'Să deți[...]', correct: 0 },
   { type: 'choice', question: 'Ce sancțiune se aplică pentru utilizarea licenței unui alt psiholog?', options: ['AV', 'FW', 'Suspendare pe perioadă determinată', 'Demitere din departament'], correct: 3 },
-  { type: 'choice', question: 'În cazul unei intervenții pentru tentativă de suicid, pe ce frecvență trebuie mutată echipa medicală?', options: ['Frecvența 10', 'Frecvența 11', 'Frecvența 12', 'Frecvența 13'], correct: 2 },
-  { type: 'choice', question: 'Care este prima etapă a protocolului de intervenție psihologică în caz de tentativă de suicid?', options: ['Transportarea pacientului la spital', 'Evaluarea riscului și stabilizarea persoanei', 'Informarea familiei', 'Documentarea cazului'], correct: 1 },
-  { type: 'choice', question: 'Care dintre următoarele comportamente este interzis în timpul unei intervenții suicidare?', options: ['Folosirea unui ton calm și empatic', 'Adresarea pacientului cu respect', 'Apelarea la forță fizică fără consimțământ', 'Asigurarea unui mediu sigur'], correct: 2 },
+  { type: 'choice', question: 'În cazul unei intervenții pentru tentativă de suicid, pe ce frecvență trebuie mutată echipa medicală?', options: ['Frecvența 10', 'Frecvența 11', 'Frecven[...]', correct: 1 },
+  { type: 'choice', question: 'Care este prima etapă a protocolului de intervenție psihologică în caz de tentativă de suicid?', options: ['Transportarea pacientului la spital', 'Evaluarea ri[...]', correct: 1 },
+  { type: 'choice', question: 'Care dintre următoarele comportamente este interzis în timpul unei intervenții suicidare?', options: ['Folosirea unui ton calm și empatic', 'Adresarea pacientul[...]', correct: 1 }
 ];
 
 const TOTAL_STEPS = 15;
@@ -998,204 +1233,110 @@ function updateTimerBar() {
   progressFill.style.width = `${progress}%`;
 }
 
-function updateQuestion() {
-  const current = questions[currentQuestionIndex];
-  const label = current.type === 'input' ? 'Pas' : 'Intrebare';
-  questionTitle.textContent = current.question;
-  questionCounter.textContent = `${label} ${currentQuestionIndex + 1} / ${TOTAL_STEPS}`;
-  timerValue = 45;
-  updateTimerBar();
-
-  answersContainer.innerHTML = '';
-  nextBtn.disabled = true;
-
-  if (current.type === 'input') {
-    const input = document.createElement('input');
-    input.className = 'answer-input';
-    input.placeholder = current.placeholder || '';
-    input.type = current.inputType || 'text';
-    input.autocomplete = 'off';
-    input.addEventListener('input', () => {
-      nextBtn.disabled = !input.value.trim();
-    });
-    answersContainer.appendChild(input);
-    input.focus();
-    selectedAnswerIndex = null;
+function displayQuestion() {
+  if (currentQuestionIndex >= questions.length) {
+    endTest(true);
     return;
   }
 
-  current.options.forEach((option, index) => {
-    const answerButton = document.createElement('button');
-    answerButton.className = 'answer-option';
-    answerButton.textContent = option;
-    answerButton.addEventListener('click', () => selectAnswer(index, answerButton));
-    answersContainer.appendChild(answerButton);
+  const question = questions[currentQuestionIndex];
+  questionTitle.textContent = question.question;
+  answersContainer.innerHTML = '';
+  selectedAnswerIndex = null;
+  nextBtn.disabled = true;
+
+  question.options.forEach((option, index) => {
+    const button = document.createElement('button');
+    button.className = 'answer-option';
+    button.textContent = option;
+    button.onclick = () => selectAnswer(index);
+    answersContainer.appendChild(button);
   });
 
-  selectedAnswerIndex = null;
+  updateTimerBar();
+  questionCounter.textContent = `Pas ${currentQuestionIndex + 1} / ${TOTAL_STEPS}`;
 }
 
-function selectAnswer(index, button) {
+function selectAnswer(index) {
   if (securityLock) return;
 
   selectedAnswerIndex = index;
-  answersContainer.querySelectorAll('.answer-option').forEach((btn, idx) => {
-    btn.classList.toggle('selected', idx === index);
+  const options = document.querySelectorAll('.answer-option');
+  options.forEach((opt, i) => {
+    opt.classList.toggle('selected', i === index);
   });
+
   nextBtn.disabled = false;
 }
 
-function getCurrentInputValue() {
-  const input = answersContainer.querySelector('input');
-  return input ? input.value.trim() : '';
-}
-
-function resetTimer() {
-  clearInterval(timerInterval);
+function startTimer() {
   timerValue = 45;
-  timerDisplay.textContent = `${timerValue}s`;
-  updateTimerBar();
+  timerDisplay.textContent = '45s';
+  clearInterval(timerInterval);
+
   timerInterval = setInterval(() => {
-    timerValue -= 1;
+    timerValue--;
     timerDisplay.textContent = `${timerValue}s`;
     updateTimerBar();
+
     if (timerValue <= 0) {
       clearInterval(timerInterval);
-      proceedAfterTimeout();
+      moveToNextQuestion();
     }
   }, 1000);
 }
 
-function proceedAfterTimeout() {
-  if (questions[currentQuestionIndex].type !== 'input' && selectedAnswerIndex === null) {
-    antiCheat.triggerTestFailure('Timp expirat. Examen picat.');
-    return;
-  }
-  goToNextQuestion();
-}
+function moveToNextQuestion() {
+  if (securityLock) return;
 
-function goToNextQuestion() {
-  if (!questions.length || securityLock) return;
-
-  const current = questions[currentQuestionIndex];
-  if (current.type === 'choice' && selectedAnswerIndex === current.correct) {
-    score += 1;
-  }
-
-  if (current.type === 'input') {
-    const value = getCurrentInputValue();
-    if (!value) {
-      showAlert('Completeaza campurile inainte de a continua.');
-      return;
+  if (selectedAnswerIndex !== null) {
+    const question = questions[currentQuestionIndex];
+    if (selectedAnswerIndex === question.correct) {
+      score++;
     }
   }
 
-  currentQuestionIndex += 1;
+  currentQuestionIndex++;
+  clearInterval(timerInterval);
+
   if (currentQuestionIndex >= questions.length) {
-    endTest(!testFailed);
+    endTest(true);
   } else {
-    updateQuestion();
-    resetTimer();
-  }
-}
-
-async function postTestResultToDiscord(passed, percentage) {
-  try {
-    const response = await fetch(`${API_BASE}/api/test-result`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        user_id: 0,
-        user_name: testUserName,
-        user_cnp: testUserCNP,
-        percentage: percentage,
-        passed: passed,
-        violations: antiCheat.violations,
-        cheating_detected: antiCheat.violations.length > 0
-      })
-    });
-    if (response.ok) {
-      console.log('Rezultat test postat pe Discord');
-    } else {
-      const text = await response.text();
-      console.error('Eroare la postarea rezultatului:', response.status, text);
-    }
-  } catch (e) {
-    console.error('Eroare la trimiterea rezultatului:', e);
+    displayQuestion();
+    startTimer();
   }
 }
 
 function endTest(passed) {
-  if (resultSent) return;
-  resultSent = true;
-  clearInterval(timerInterval);
   antiCheat.disableTestMode();
-  
-  const percentage = Math.round((score / 15) * 100);
-  const success = passed && percentage >= 70;
+  clearInterval(timerInterval);
+  securityLock = true;
 
-  if (success) {
-    resultTitle.textContent = 'Felicitari!';
-    resultMessage.textContent = `Ai trecut testul cu punctajul ${percentage}%. Poti continua procesul tau de integrare in departament.`;
-  } else {
-    resultTitle.textContent = 'Din pacate...';
-    resultMessage.textContent = `Ai picat testul cu punctajul ${percentage}%. Poti sustine iarasi testul peste 24 ore.`;
-  }
+  const percentage = Math.round((score / TOTAL_STEPS) * 100);
+  const passing = percentage >= 60;
 
-  resultImage.innerHTML = '';
-  resultImage.style.display = 'none';
+  resultTitle.textContent = passing ? '✅ Felicitări!' : '❌ Test Nereușit';
+  resultMessage.textContent = passing 
+    ? `Ai promovat testul cu ${percentage}%! Te-ai calificat pentru departament.`
+    : `Din păcate, ai picat testul cu ${percentage}%. Scor minim: 60%`;
   resultScore.textContent = `${percentage}%`;
-  postTestResultToDiscord(success, percentage);
+
+  if (!resultSent && testUserName && testUserCNP) {
+    resultSent = true;
+    fetch(`${API_BASE}/api/test-result`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_name: testUserName,
+        user_cnp: testUserCNP,
+        score: percentage,
+        passed: passing,
+        timestamp: new Date().toISOString()
+      })
+    }).catch(e => console.log('Result sent'));
+  }
+
   switchPage(pageResult);
-}
-
-function showAlert(message) {
-  alertText.textContent = message;
-  alertOverlay.classList.remove('hidden');
-}
-
-function hideAlert() {
-  alertOverlay.classList.add('hidden');
-}
-
-function requestFullscreenMode() {
-  const docEl = document.documentElement;
-  if (docEl.requestFullscreen) {
-    return docEl.requestFullscreen();
-  }
-  if (docEl.webkitRequestFullscreen) {
-    return docEl.webkitRequestFullscreen();
-  }
-  return Promise.resolve();
-}
-
-function protectNavigation() {
-  history.pushState(null, '', location.href);
-  window.addEventListener('popstate', () => {
-    history.pushState(null, '', location.href);
-    antiCheat.triggerTestFailure('Navigare detectata. Examen picat.');
-  });
-}
-
-function startTest() {
-  questions = buildQuestionSet();
-  currentQuestionIndex = 0;
-  score = 0;
-  selectedAnswerIndex = null;
-  securityLock = false;
-  testFailed = false;
-  resultSent = false;
-
-  antiCheat.enableTestMode();
-
-  requestFullscreenMode().catch(() => {
-    antiCheat.triggerTestFailure('Full screen obligatoriu. Examen picat.');
-  });
-
-  switchPage(pageTest);
-  updateQuestion();
-  resetTimer();
-  protectNavigation();
 }
 
 startTestBtn.addEventListener('click', () => {
@@ -1204,35 +1345,58 @@ startTestBtn.addEventListener('click', () => {
 
 confirmStartBtn.addEventListener('click', () => {
   switchPage(pagePreTest);
-  preTestName.focus();
 });
 
-cancelTestBtn.addEventListener('click', () => switchPage(pageHome));
+cancelTestBtn.addEventListener('click', () => {
+  switchPage(pageHome);
+});
 
 preTestNextBtn.addEventListener('click', () => {
   const name = preTestName.value.trim();
   const cnp = preTestCNP.value.trim();
+
   if (!name || !cnp) {
-    showAlert('Completeaza toate campurile inainte de a continua.');
+    alert('Completează toate câmpurile!');
     return;
   }
+
   testUserName = name;
   testUserCNP = cnp;
-  startTest();
+
+  questions = buildQuestionSet();
+  currentQuestionIndex = 0;
+  score = 0;
+  selectedAnswerIndex = null;
+  testFailed = false;
+  resultSent = false;
+
+  antiCheat.enableTestMode();
+  switchPage(pageTest);
+
+  setTimeout(() => {
+    displayQuestion();
+    startTimer();
+  }, 100);
 });
 
-preTestCancelBtn.addEventListener('click', () => switchPage(pageHome));
+preTestCancelBtn.addEventListener('click', () => {
+  preTestName.value = '';
+  preTestCNP.value = '';
+  switchPage(pageHome);
+});
 
-nextBtn.addEventListener('click', () => goToNextQuestion());
+nextBtn.addEventListener('click', moveToNextQuestion);
 
 retryBtn.addEventListener('click', () => {
   preTestName.value = '';
   preTestCNP.value = '';
-  antiCheat = new AntiCheatSystem();
+  antiCheat.disableTestMode();
   switchPage(pageHome);
 });
 
-closeAlertBtn.addEventListener('click', () => hideAlert());
+closeAlertBtn.addEventListener('click', () => {
+  alertOverlay.classList.add('hidden');
+});
 </script>
 </body>
 </html>
