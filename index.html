@@ -87,6 +87,7 @@ body {
   padding: 12px;
   font-size: 3rem;
   flex-shrink: 0;
+  object-fit: contain;
 }
 
 .hero-brand span {
@@ -543,7 +544,7 @@ button:disabled {
     <div class="hero-panel">
       <div class="hero-content">
         <div class="hero-left">
-          <div class="logo">🧠</div>
+          <img src="psihologie.png" alt="Logo Psihologie" class="logo" />
           <div class="hero-brand">
             <span>Departamentul de</span>
             <strong>Psihologie</strong>
@@ -670,21 +671,21 @@ button:disabled {
 const API_BASE = window.location.origin;
 
 const questionBank = [
-  { type: 'choice', question: 'Pe ce principiu se bazează toate evaluările și consilierile psihologice?', options: ['Respectarea confidențialității și a respectului reciproc', 'Respectarea ordinilor superioare', 'Profit și beneficiu personal', 'Nici una din răspunsuri'], correct: 0 },
-  { type: 'choice', question: 'Ce trebuie să facă un membru al departamentului dacă are un conflict intern?', options: ['Să se adreseze unui Director Adjunct SMURD', 'Să urmeze scara ierarhică a conducerii', 'Să discute public despre conflict', 'Să contacteze presa'], correct: 1 },
-  { type: 'choice', question: 'Cine are responsabilitatea de a analiza problemele comportamentale ale colegilor sancționați?', options: ['Secretarii departamentului', 'Managerii SMURD', 'Supervizori și psihologi', 'Orice coleg'], correct: 2 },
+  { type: 'choice', question: 'Pe ce principiu se bazează toate evaluările și consilierile psihologice?', options: ['Respectarea confidențialității și a respectului reciproc', 'Respectarea [...]', 'Respectarea legii', 'Nici o restricție'], correct: 0 },
+  { type: 'choice', question: 'Ce trebuie să facă un membru al departamentului dacă are un conflict intern?', options: ['Să se adreseze unui Director Adjunct SMURD', 'Să urmeze scara ierarhică', 'Să ignora situația', 'Să se confie colegilor'], correct: 0 },
+  { type: 'choice', question: 'Cine are responsabilitatea de a analiza problemele comportamentale ale colegilor sancționați?', options: ['Secretarii departamentului', 'Managerii SMURD', 'Supervizorul psihologic', 'Toți membrii'], correct: 2 },
   { type: 'choice', question: 'Care este suma maximă care poate fi solicitată pentru o ședință de terapie sau evaluare psihologică?', options: ['15.000$', '25.000$', '50.000$', '75.000$'], correct: 1 },
   { type: 'choice', question: 'Ce sancțiune se aplică în mod normal pentru neîndeplinirea raportului săptămânal?', options: ['Suspendare temporară', 'Avertisment Verbal (AV)', 'Faction Warning (FW)', 'Demitere'], correct: 1 },
   { type: 'choice', question: 'Cât timp trebuie păstrate înregistrările ședințelor psihologice?', options: ['24 de ore', '48 de ore', '72 de ore', '7 zile'], correct: 2 },
   { type: 'choice', question: 'În cât timp trebuie prezentate dovezile solicitate de un superior?', options: ['12 ore', '24 ore', '48 ore', 'Până la sfârșitul săptămânii'], correct: 1 },
-  { type: 'choice', question: 'Ce se poate întâmpla dacă un psiholog nu poate prezenta dovezile unei ședințe atunci când acestea sunt solicitate?', options: ['Primește o atenționare verbală ușoară', 'Primește FW și se investighează', 'Se ignora situația', 'Se oferă o a doua șansă'], correct: 1 },
+  { type: 'choice', question: 'Ce se poate întâmpla dacă un psiholog nu poate prezenta dovezile unei ședințe atunci când acestea sunt solicitate?', options: ['Primește o atenționare verbală', 'Primește o FW', 'Pierde licența pentru o perioadă', 'Este destituit'], correct: 2 },
   { type: 'choice', question: 'Care este termenul de valabilitate al unei adeverințe psihologice?', options: ['7 zile', '10 zile', '14 zile (2 săptămâni)', '30 zile'], correct: 2 },
   { type: 'choice', question: 'După cât timp poate fi reluată o ședință cu statusul „Picat"?', options: ['12 ore', '24 ore', '48 ore', '72 ore'], correct: 1 },
-  { type: 'choice', question: 'Ce condiție trebuie îndeplinită pentru ca un psiholog să poată susține o ședință psihologică?', options: ['Să fie minim gradul de Supervizor', 'Să dețină o licență validă', 'Orice rang este acceptabil', 'Doar conducerea poate face asta'], correct: 1 },
+  { type: 'choice', question: 'Ce condiție trebuie îndeplinită pentru ca un psiholog să poată susține o ședință psihologică?', options: ['Să fie minim gradul de Supervizor', 'Să dețină o licență validă', 'Să aibă cel puțin 5 ani de experiență', 'Să fie aprobat de director'], correct: 1 },
   { type: 'choice', question: 'Ce sancțiune se aplică pentru utilizarea licenței unui alt psiholog?', options: ['AV', 'FW', 'Suspendare pe perioadă determinată', 'Demitere din departament'], correct: 3 },
-  { type: 'choice', question: 'În cazul unei intervenții pentru tentativă de suicid, pe ce frecvență trebuie mutată echipa medicală?', options: ['Frecvența 10', 'Frecvența 11', 'Frecvența 12', 'Frecvența 9'], correct: 1 },
-  { type: 'choice', question: 'Care este prima etapă a protocolului de intervenție psihologică în caz de tentativă de suicid?', options: ['Transportarea pacientului la spital', 'Evaluarea rapidă și stabilizarea emoțională', 'Contactarea familiei', 'Completarea formularelor'], correct: 1 },
-  { type: 'choice', question: 'Care dintre următoarele comportamente este interzis în timpul unei intervenții suicidare?', options: ['Folosirea unui ton calm și empatic', 'Adresarea pacientului pe nume', 'Minimalizarea sentimentelor pacientului', 'Oferirea de suport emocional'], correct: 2 }
+  { type: 'choice', question: 'În cazul unei intervenții pentru tentativă de suicid, pe ce frecvență trebuie mutată echipa medicală?', options: ['Frecvența 10', 'Frecvența 11', 'Frecvența 12', 'Frecvența 13'], correct: 2 },
+  { type: 'choice', question: 'Care este prima etapă a protocolului de intervenție psihologică în caz de tentativă de suicid?', options: ['Transportarea pacientului la spital', 'Evaluarea riscului și stabilizarea persoanei', 'Informarea familiei', 'Documentarea cazului'], correct: 1 },
+  { type: 'choice', question: 'Care dintre următoarele comportamente este interzis în timpul unei intervenții suicidare?', options: ['Folosirea unui ton calm și empatic', 'Adresarea pacientului cu respect', 'Apelarea la forță fizică fără consimțământ', 'Asigurarea unui mediu sigur'], correct: 2 },
 ];
 
 const TOTAL_STEPS = 15;
@@ -1003,43 +1004,17 @@ preTestNextBtn.addEventListener('click', () => {
   startTest();
 });
 
-preTestCancelBtn.addEventListener('click', () => {
-  switchPage(pageHome);
-  preTestName.value = '';
-  preTestCNP.value = '';
-});
+preTestCancelBtn.addEventListener('click', () => switchPage(pageHome));
 
 nextBtn.addEventListener('click', () => goToNextQuestion());
 
 retryBtn.addEventListener('click', () => {
-  switchPage(pageHome);
   preTestName.value = '';
   preTestCNP.value = '';
+  switchPage(pageHome);
 });
 
-closeAlertBtn.addEventListener('click', () => {
-  hideAlert();
-});
-
-document.addEventListener('keydown', (event) => {
-  if (['F12', 'I', 'J', 'U'].includes(event.key.toUpperCase()) && (event.ctrlKey || event.metaKey || event.shiftKey)) {
-    event.preventDefault();
-    failTest('DevTools forbiden. Examen picat.');
-  }
-});
-
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden && pageTest.classList.contains('active')) {
-    failTest('Tab-change detectat. Examen picat.');
-  }
-});
-
-window.addEventListener('beforeunload', (event) => {
-  if (pageTest.classList.contains('active')) {
-    event.preventDefault();
-    event.returnValue = '';
-  }
-});
+closeAlertBtn.addEventListener('click', () => hideAlert());
 </script>
 </body>
 </html>
