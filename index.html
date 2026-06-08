@@ -488,6 +488,22 @@ button:disabled {
   font-size: 1.5rem;
 }
 
+.anti-cheat-monitor {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  font-size: 12px;
+  color: #00FF00;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: 1px solid #00FF00;
+  z-index: 999;
+  display: none;
+  font-family: monospace;
+  max-width: 200px;
+}
+
 @media (max-width: 900px) {
   .hero-panel, .card, .topbar {
     padding: 24px;
@@ -667,11 +683,232 @@ button:disabled {
     </div>
   </div>
 
+  <div class="anti-cheat-monitor" id="cheatMonitor"></div>
+
 <script>
 const API_BASE = window.location.origin;
 
+// ===================== ANTI-CHEAT SYSTEM =====================
+class AntiCheatSystem {
+  constructor() {
+    this.violations = [];
+    this.cheatDetected = false;
+    this.isTestRunning = false;
+    this.lastScreenshot = null;
+    this.tabSwitchCount = 0;
+    this.deviceFingerprint = this.generateFingerprint();
+    this.startMonitoring();
+  }
+
+  generateFingerprint() {
+    return {
+      ua: navigator.userAgent,
+      lang: navigator.language,
+      tz: new Date().getTimezoneOffset(),
+      plugins: navigator.plugins.length,
+      timestamp: Date.now()
+    };
+  }
+
+  logViolation(type, severity = 'high') {
+    const violation = {
+      type,
+      severity,
+      timestamp: new Date().toLocaleString(),
+      count: (this.violations.filter(v => v.type === type).length || 0) + 1
+    };
+    this.violations.push(violation);
+    console.warn(`🚨 VIOLATION DETECTED: ${type} (${severity})`);
+    this.updateMonitor();
+
+    // Trimite la server în timp real
+    if (this.isTestRunning) {
+      this.sendViolationToServer(violation);
+    }
+  }
+
+  sendViolationToServer(violation) {
+    fetch(`${API_BASE}/api/cheat-log`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        violation: violation.type,
+        severity: violation.severity,
+        timestamp: violation.timestamp,
+        fingerprint: this.deviceFingerprint
+      })
+    }).catch(e => console.log('Log sent'));
+  }
+
+  updateMonitor() {
+    const monitor = document.getElementById('cheatMonitor');
+    if (monitor) {
+      monitor.innerHTML = `
+        🔒 MONITORIZARE ACTIVA<br/>
+        Incalcari: ${this.violations.length}<br/>
+        ${this.violations.slice(-3).map(v => `• ${v.type}`).join('<br/>')}
+      `;
+    }
+  }
+
+  startMonitoring() {
+    // 1. DETECTIE TAB SWITCH (prin visibility API)
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        this.logViolation('TAB SWITCH DETECTED', 'critical');
+        if (this.isTestRunning) {
+          this.triggerTestFailure('Tab switch detectat. Examen picat.');
+        }
+      }
+    });
+
+    // 2. DETECTIE FULLSCREEN EXIT
+    document.addEventListener('fullscreenchange', () => {
+      if (!document.fullscreenElement && this.isTestRunning) {
+        this.logViolation('FULLSCREEN EXIT', 'critical');
+        this.triggerTestFailure('Ai ieșit din fullscreen. Examen picat.');
+      }
+    });
+
+    // 3. DETECTIE DEVTOOLS (măsurare dimensiuni)
+    setInterval(() => {
+      if (!this.isTestRunning) return;
+
+      const threshold = 160;
+      if (window.outerWidth - window.innerWidth > threshold ||
+          window.outerHeight - window.innerHeight > threshold) {
+        this.logViolation('DEVTOOLS OPENED', 'critical');
+        this.triggerTestFailure('DevTools detectat. Examen picat.');
+      }
+    }, 200);
+
+    // 4. DETECTIE PRINT SCREEN / SCREENSHOT
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'PrintScreen' && this.isTestRunning) {
+        e.preventDefault();
+        this.logViolation('PRINT SCREEN ATTEMPT', 'high');
+        this.triggerTestFailure('Screenshot detectat. Examen picat.');
+      }
+
+      // 5. BLOCHEAZĂ SHORTCUT-URI SUSPECTE
+      const suspiciousShortcuts = {
+        'F12': true,
+        'F11': true,
+      };
+
+      if (suspiciousShortcuts[e.key]) {
+        e.preventDefault();
+        this.logViolation(`SHORTCUT BLOCKED: ${e.key}`, 'high');
+      }
+
+      if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'C' || e.key === 'J')) {
+        e.preventDefault();
+        this.logViolation('DEVTOOLS SHORTCUT BLOCKED', 'high');
+      }
+    });
+
+    // 6. BLOCHEAZĂ RIGHT-CLICK
+    document.addEventListener('contextmenu', (e) => {
+      if (this.isTestRunning) {
+        e.preventDefault();
+        this.logViolation('RIGHT CLICK ATTEMPT', 'medium');
+      }
+    });
+
+    // 7. BLOCHEAZĂ COPY-PASTE
+    document.addEventListener('copy', (e) => {
+      if (this.isTestRunning) {
+        e.preventDefault();
+        this.logViolation('COPY ATTEMPT', 'medium');
+      }
+    });
+
+    document.addEventListener('paste', (e) => {
+      if (this.isTestRunning) {
+        e.preventDefault();
+        this.logViolation('PASTE ATTEMPT', 'medium');
+      }
+    });
+
+    // 8. DETECTIE WINDOW BLUR (focus pierdut)
+    window.addEventListener('blur', () => {
+      if (this.isTestRunning) {
+        this.logViolation('WINDOW BLUR', 'high');
+      }
+    });
+
+    // 9. MONITORIZARE SCREENSHOT VIA CANVAS
+    this.setupCanvasProtection();
+
+    // 10. ANTI-HEADLESS BROWSER CHECK
+    this.checkHeadless();
+  }
+
+  setupCanvasProtection() {
+    const originalToDataURL = HTMLCanvasElement.prototype.toDataURL;
+    HTMLCanvasElement.prototype.toDataURL = function() {
+      if (antiCheat.isTestRunning) {
+        antiCheat.logViolation('CANVAS SCREENSHOT ATTEMPT', 'high');
+        return '';
+      }
+      return originalToDataURL.call(this);
+    };
+  }
+
+  checkHeadless() {
+    if (navigator.webdriver) {
+      this.logViolation('HEADLESS BROWSER DETECTED', 'critical');
+    }
+    if (!navigator.plugins.length) {
+      console.warn('Plugins not available - possible headless browser');
+    }
+  }
+
+  triggerTestFailure(reason) {
+    if (testFailed) return;
+    testFailed = true;
+    securityLock = true;
+    clearInterval(timerInterval);
+    
+    // Trimite raport final la server
+    this.sendCheatingReport(reason);
+    
+    // End test cu failură
+    endTest(false);
+  }
+
+  sendCheatingReport(reason) {
+    fetch(`${API_BASE}/api/cheating-report`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_name: testUserName,
+        user_cnp: testUserCNP,
+        reason: reason,
+        violations: this.violations,
+        fingerprint: this.deviceFingerprint
+      })
+    }).catch(e => console.log('Report sent'));
+  }
+
+  enableTestMode() {
+    this.isTestRunning = true;
+    const monitor = document.getElementById('cheatMonitor');
+    if (monitor) monitor.style.display = 'block';
+  }
+
+  disableTestMode() {
+    this.isTestRunning = false;
+    const monitor = document.getElementById('cheatMonitor');
+    if (monitor) monitor.style.display = 'none';
+  }
+}
+
+const antiCheat = new AntiCheatSystem();
+
+// ===================== TEST SCRIPT =====================
 const questionBank = [
-  { type: 'choice', question: 'Pe ce principiu se bazează toate evaluările și consilierile psihologice?', options: ['Respectarea confidențialității și a respectului reciproc', 'Respectarea [...]', 'Respectarea legii', 'Nici o restricție'], correct: 0 },
+  { type: 'choice', question: 'Pe ce principiu se bazează toate evaluările și consilierile psihologice?', options: ['Respectarea confidențialității și a respectului reciproc', 'Respectarea[...]', 'Respectarea legii', 'Nici o restricție'], correct: 0 },
   { type: 'choice', question: 'Ce trebuie să facă un membru al departamentului dacă are un conflict intern?', options: ['Să se adreseze unui Director Adjunct SMURD', 'Să urmeze scara ierarhică', 'Să ignora situația', 'Să se confie colegilor'], correct: 0 },
   { type: 'choice', question: 'Cine are responsabilitatea de a analiza problemele comportamentale ale colegilor sancționați?', options: ['Secretarii departamentului', 'Managerii SMURD', 'Supervizorul psihologic', 'Toți membrii'], correct: 2 },
   { type: 'choice', question: 'Care este suma maximă care poate fi solicitată pentru o ședință de terapie sau evaluare psihologică?', options: ['15.000$', '25.000$', '50.000$', '75.000$'], correct: 1 },
@@ -831,7 +1068,7 @@ function resetTimer() {
 
 function proceedAfterTimeout() {
   if (questions[currentQuestionIndex].type !== 'input' && selectedAnswerIndex === null) {
-    failTest('Timp expirat. Examen picat.');
+    antiCheat.triggerTestFailure('Timp expirat. Examen picat.');
     return;
   }
   goToNextQuestion();
@@ -872,7 +1109,9 @@ async function postTestResultToDiscord(passed, percentage) {
         user_name: testUserName,
         user_cnp: testUserCNP,
         percentage: percentage,
-        passed: passed
+        passed: passed,
+        violations: antiCheat.violations,
+        cheating_detected: antiCheat.violations.length > 0
       })
     });
     if (response.ok) {
@@ -890,6 +1129,8 @@ function endTest(passed) {
   if (resultSent) return;
   resultSent = true;
   clearInterval(timerInterval);
+  antiCheat.disableTestMode();
+  
   const percentage = Math.round((score / 15) * 100);
   const success = passed && percentage >= 70;
 
@@ -928,36 +1169,11 @@ function requestFullscreenMode() {
   return Promise.resolve();
 }
 
-function failTest(reason) {
-  if (securityLock) return;
-  securityLock = true;
-  testFailed = true;
-  clearInterval(timerInterval);
-  endTest(false);
-}
-
-function checkForFraud() {
-  if (document.hidden) {
-    failTest('Schimbarea tab-ului detectata. Examen picat.');
-    return;
-  }
-
-  if (!document.fullscreenElement) {
-    failTest('Full screen pierdut. Examen picat.');
-    return;
-  }
-
-  const devToolsOpen = window.outerWidth - window.innerWidth > 160 || window.outerHeight - window.innerHeight > 160;
-  if (devToolsOpen) {
-    failTest('DevTools detectat. Examen picat.');
-  }
-}
-
 function protectNavigation() {
   history.pushState(null, '', location.href);
   window.addEventListener('popstate', () => {
     history.pushState(null, '', location.href);
-    failTest('Navigare detectata. Examen picat.');
+    antiCheat.triggerTestFailure('Navigare detectata. Examen picat.');
   });
 }
 
@@ -970,15 +1186,16 @@ function startTest() {
   testFailed = false;
   resultSent = false;
 
+  antiCheat.enableTestMode();
+
   requestFullscreenMode().catch(() => {
-    failTest('Full screen obligatoriu. Examen picat.');
+    antiCheat.triggerTestFailure('Full screen obligatoriu. Examen picat.');
   });
 
   switchPage(pageTest);
   updateQuestion();
   resetTimer();
   protectNavigation();
-  setInterval(checkForFraud, 1200);
 }
 
 startTestBtn.addEventListener('click', () => {
@@ -1011,6 +1228,7 @@ nextBtn.addEventListener('click', () => goToNextQuestion());
 retryBtn.addEventListener('click', () => {
   preTestName.value = '';
   preTestCNP.value = '';
+  antiCheat = new AntiCheatSystem();
   switchPage(pageHome);
 });
 
